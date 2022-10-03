@@ -53,11 +53,11 @@ const Section: React.FC<
   );
 };
 
-const socket = io('https://swt-bank.loca.lt');
+const socket = io('https://realtime-g2g4oq25qa-uc.a.run.app');
 
 const App = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [lastPong, setLastPong] = useState<any>(null);
+  const [serverStatus, setServerStatus] = useState<any>(null);
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -73,8 +73,8 @@ const App = () => {
       setIsConnected(false);
     });
 
-    socket.on('s:status', () => {
-      setLastPong(new Date().toISOString());
+    socket.on('s:status', (message: any) => {
+      setServerStatus(message);
     });
 
     return () => {
@@ -85,7 +85,10 @@ const App = () => {
   }, []);
 
   const sendPing = () => {
-    socket.emit('c:move');
+    socket.emit('c:move', {
+      message: 'ping',
+      id: new Date().getTime(),
+    });
   };
 
   return (
@@ -103,7 +106,7 @@ const App = () => {
           }}>
           <View>
             <Text>Connected: {'' + isConnected}</Text>
-            <Text>Last pong: {lastPong || '-'}</Text>
+            <Text>Last pong: {JSON.stringify(serverStatus || {}) || '-'}</Text>
             <Button
               onPress={sendPing}
               title="Send ping"
