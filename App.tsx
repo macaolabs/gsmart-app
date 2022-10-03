@@ -57,7 +57,9 @@ const socket = io('https://realtime-g2g4oq25qa-uc.a.run.app');
 
 const App = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [serverStatus, setServerStatus] = useState<any>(null);
+  const [pong, setPong] = useState<any>({});
+  const [ping, setPing] = useState<any>({});
+  const [time, setTime] = useState(0);
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -74,7 +76,10 @@ const App = () => {
     });
 
     socket.on('s:status', (message: any) => {
-      setServerStatus(message);
+      setPong({
+        ...message,
+        time: new Date().getTime(),
+      });
     });
 
     return () => {
@@ -85,11 +90,17 @@ const App = () => {
   }, []);
 
   const sendPing = () => {
-    socket.emit('c:move', {
+    const ping = {
       message: 'ping',
-      id: new Date().getTime(),
-    });
+      time: new Date().getTime(),
+    };
+    setPing(ping);
+    socket.emit('c:move', ping);
   };
+
+  const delta = React.useMemo(() => {
+    if (ping && ping.time && pong && pong.time) return pong.time - ping.time;
+  }, [ping, pong]);
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -106,7 +117,9 @@ const App = () => {
           }}>
           <View>
             <Text>Connected: {'' + isConnected}</Text>
-            <Text>Last pong: {JSON.stringify(serverStatus || {}) || '-'}</Text>
+            <Text>Last pong: {JSON.stringify(pong || {}) || '-'}</Text>
+            <Text>Last ping: {JSON.stringify(ping || {}) || '-'}</Text>
+            <Text>Delta: {delta || '-'}</Text>
             <Button
               onPress={sendPing}
               title="Send ping"
