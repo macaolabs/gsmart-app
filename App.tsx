@@ -8,7 +8,8 @@
  * @format
  */
 
-import React, {type PropsWithChildren} from 'react';
+import React, {useEffect, useState, type PropsWithChildren} from 'react';
+import io from 'socket.io-client';
 import {
   SafeAreaView,
   ScrollView,
@@ -17,15 +18,10 @@ import {
   Text,
   useColorScheme,
   View,
+  Button,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 const Section: React.FC<
   PropsWithChildren<{
@@ -57,11 +53,39 @@ const Section: React.FC<
   );
 };
 
+const socket = io('https://swt-bank.loca.lt');
+
 const App = () => {
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [lastPong, setLastPong] = useState<any>(null);
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socket.on('s:status', () => {
+      setLastPong(new Date().toISOString());
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('pong');
+    };
+  }, []);
+
+  const sendPing = () => {
+    socket.emit('c:move');
   };
 
   return (
@@ -73,25 +97,20 @@ const App = () => {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>My APP</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Love">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <View>
+            <Text>Connected: {'' + isConnected}</Text>
+            <Text>Last pong: {lastPong || '-'}</Text>
+            <Button
+              onPress={sendPing}
+              title="Send ping"
+              color="#841584"
+              accessibilityLabel="Send ping purple button"
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
