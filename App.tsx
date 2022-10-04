@@ -77,7 +77,7 @@ const CreateBox = (entities, {touches, screen}) => {
       entities[++boxIds] = {
         body: body,
         size: [boxSize, boxSize],
-        color: boxIds % 2 == 0 ? 'pink' : '#B8E986',
+        color: boxIds % 2 == 0 ? 'blue' : '#B8E986',
         renderer: Box,
       };
     });
